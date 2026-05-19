@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL") // أو "file:./dev.db" حسب إعداداتك
+}
+
+// 1. جدول المستخدمين (مدير، موظف، عميل)
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String
+  phone    String   @unique
+  password String
+  role     String   @default("عميل") 
+  branch   String?  
+  orders   Order[]  
+}
+
+// 2. جدول الفروع
+model Branch {
+  id   Int    @id @default(autoincrement())
+  name String
+}
+
+// 3. جدول الأقسام (التصنيفات)
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+  products Product[]
+}
+
+// 4. جدول المنتجات (مع ميزة التوفر)
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  price       Float
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  isAvailable Boolean  @default(true) // ميزة إيقاف المنتج من المطبخ
+}
+
+// 5. جدول الطلبات
+model Order {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  customerName  String
+  orderType     String   // توصيل أو استلام
+  branch        String   // الفرع المختار
+  items         String   // المنتجات المطلوبة (محفوظة كنص JSON)
+  totalPrice    Float
+  status        String   @default("قيد الانتظار") // قيد الانتظار، جاري التجهيز، جاهز
+  paymentStatus String   @default("غير مدفوع")
+}
