@@ -5,11 +5,12 @@ const { PrismaClient } = require('@prisma/client');
 const app = express();
 const prisma = new PrismaClient();
 
+// السماح لجميع التطبيقات بالاتصال بالسيرفر
 app.use(cors());
 app.use(express.json());
 
 // ==========================================
-// 1. مسارات تسجيل الدخول والمستخدمين
+// 1. مسارات المستخدمين وتسجيل الدخول
 // ==========================================
 app.post('/api/register', async (req, res) => {
     try {
@@ -41,7 +42,7 @@ app.get('/api/users', async (req, res) => {
         const users = await prisma.user.findMany();
         res.json(users);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء جلب المستخدمين" });
+        res.status(500).json({ error: "خطأ في جلب المستخدمين" });
     }
 });
 
@@ -50,7 +51,7 @@ app.delete('/api/users/:id', async (req, res) => {
         await prisma.user.delete({ where: { id: parseInt(req.params.id) } });
         res.json({ message: "تم الحذف بنجاح" });
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء الحذف" });
+        res.status(500).json({ error: "خطأ أثناء الحذف" });
     }
 });
 
@@ -62,7 +63,7 @@ app.get('/api/branches', async (req, res) => {
         const branches = await prisma.branch.findMany();
         res.json(branches);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء جلب الفروع" });
+        res.status(500).json({ error: "خطأ في جلب الفروع" });
     }
 });
 
@@ -72,16 +73,16 @@ app.post('/api/branches', async (req, res) => {
         const branch = await prisma.branch.create({ data: { name } });
         res.json(branch);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء إضافة الفرع" });
+        res.status(500).json({ error: "خطأ في إضافة الفرع" });
     }
 });
 
 app.delete('/api/branches/:id', async (req, res) => {
     try {
         await prisma.branch.delete({ where: { id: parseInt(req.params.id) } });
-        res.json({ message: "تم الحذف بنجاح" });
+        res.json({ message: "تم الحذف" });
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء الحذف" });
+        res.status(500).json({ error: "خطأ أثناء الحذف" });
     }
 });
 
@@ -93,7 +94,7 @@ app.get('/api/categories', async (req, res) => {
         const categories = await prisma.category.findMany({ include: { products: true } });
         res.json(categories);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء جلب الأقسام" });
+        res.status(500).json({ error: "خطأ في جلب الأقسام" });
     }
 });
 
@@ -103,16 +104,16 @@ app.post('/api/categories', async (req, res) => {
         const category = await prisma.category.create({ data: { name } });
         res.json(category);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء إضافة القسم" });
+        res.status(500).json({ error: "خطأ في إضافة القسم" });
     }
 });
 
 app.delete('/api/categories/:id', async (req, res) => {
     try {
         await prisma.category.delete({ where: { id: parseInt(req.params.id) } });
-        res.json({ message: "تم الحذف بنجاح" });
+        res.json({ message: "تم الحذف" });
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء الحذف" });
+        res.status(500).json({ error: "خطأ أثناء الحذف" });
     }
 });
 
@@ -124,7 +125,7 @@ app.get('/api/products', async (req, res) => {
         const products = await prisma.product.findMany();
         res.json(products);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء جلب المنتجات" });
+        res.status(500).json({ error: "خطأ في جلب المنتجات" });
     }
 });
 
@@ -136,16 +137,16 @@ app.post('/api/products', async (req, res) => {
         });
         res.json(product);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء إضافة المنتج" });
+        res.status(500).json({ error: "خطأ في إضافة المنتج" });
     }
 });
 
 app.delete('/api/products/:id', async (req, res) => {
     try {
         await prisma.product.delete({ where: { id: parseInt(req.params.id) } });
-        res.json({ message: "تم الحذف بنجاح" });
+        res.json({ message: "تم الحذف" });
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء الحذف" });
+        res.status(500).json({ error: "خطأ أثناء الحذف" });
     }
 });
 
@@ -158,7 +159,7 @@ app.put('/api/products/:id/toggle', async (req, res) => {
         });
         res.json(product);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء تحديث حالة المنتج" });
+        res.status(500).json({ error: "خطأ في تحديث المنتج" });
     }
 });
 
@@ -170,7 +171,7 @@ app.get('/api/orders', async (req, res) => {
         const orders = await prisma.order.findMany();
         res.json(orders);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء جلب الطلبات" });
+        res.status(500).json({ error: "خطأ في جلب الطلبات" });
     }
 });
 
@@ -190,7 +191,7 @@ app.post('/api/orders', async (req, res) => {
         });
         res.json(order);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء إنشاء الطلب" });
+        res.status(500).json({ error: "خطأ في إنشاء الطلب" });
     }
 });
 
@@ -203,29 +204,23 @@ app.put('/api/orders/:id/status', async (req, res) => {
         });
         res.json(order);
     } catch (error) {
-        res.status(500).json({ error: "حدث خطأ أثناء تحديث حالة الطلب" });
+        res.status(500).json({ error: "خطأ في تحديث الطلب" });
     }
 });
 
 // ==========================================
-// تشغيل الخادم وإنشاء مدير افتراضي تلقائياً
+// تشغيل الخادم وإنشاء مدير افتراضي
 // ==========================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     console.log(`✅ خادم مطعم أبو مهل يعمل الآن على المنفذ ${PORT}`);
-    
     try {
         const adminExists = await prisma.user.findFirst({ where: { role: 'مدير' } });
         if (!adminExists) {
             await prisma.user.create({
-                data: {
-                    name: 'المدير العام',
-                    phone: '0500000000',
-                    password: '123456',
-                    role: 'مدير'
-                }
+                data: { name: 'المدير العام', phone: '0500000000', password: '123456', role: 'مدير' }
             });
-            console.log('👑 تم إنشاء حساب المدير الافتراضي بنجاح على السيرفر!');
+            console.log('👑 تم إنشاء حساب المدير الافتراضي بنجاح!');
         }
     } catch (error) {
         console.log('⚠️ خطأ أثناء التحقق من حساب المدير:', error.message);
