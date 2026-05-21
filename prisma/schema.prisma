@@ -8,12 +8,12 @@ datasource db {
 }
 
 model User {
-  id       Int      @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   name     String
-  phone    String   @unique
+  phone    String  @unique
   password String
-  role     String   @default("عميل")
-  branch   String?  // مخصص للموظفين لمعرفة فرعهم
+  role     String  @default("عميل")
+  branch   String? // مخصص للموظفين لمعرفة فرعهم
   orders   Order[]
 }
 
@@ -45,7 +45,7 @@ model Order {
   orderType     String
   branch        String
   totalPrice    Float
-  items         String   // سيتم حفظ المنتجات هنا كنص JSON
+  items         String // سيتم حفظ المنتجات هنا كنص JSON
   status        String   @default("قيد الانتظار")
   paymentStatus String   @default("غير مدفوع")
   createdAt     DateTime @default(now())
