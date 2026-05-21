@@ -5,7 +5,6 @@ const { PrismaClient } = require('@prisma/client');
 const app = express();
 const prisma = new PrismaClient();
 
-// السماح لجميع التطبيقات بالاتصال بالسيرفر
 app.use(cors());
 app.use(express.json());
 
@@ -118,7 +117,7 @@ app.delete('/api/categories/:id', async (req, res) => {
 });
 
 // ==========================================
-// 4. مسارات المنتجات
+// 4. مسارات المنتجات (تم التحديث لدعم الصور)
 // ==========================================
 app.get('/api/products', async (req, res) => {
     try {
@@ -131,9 +130,15 @@ app.get('/api/products', async (req, res) => {
 
 app.post('/api/products', async (req, res) => {
     try {
-        const { name, price, categoryId } = req.body;
+        // 🌟 استقبال رابط الصورة من لوحة الإدارة
+        const { name, price, categoryId, imageUrl } = req.body;
         const product = await prisma.product.create({
-            data: { name, price: parseFloat(price), categoryId: parseInt(categoryId) }
+            data: { 
+                name, 
+                price: parseFloat(price), 
+                categoryId: parseInt(categoryId),
+                imageUrl: imageUrl || null // حفظ الصورة إذا وجدت
+            }
         });
         res.json(product);
     } catch (error) {
