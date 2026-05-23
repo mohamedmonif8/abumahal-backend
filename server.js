@@ -1,233 +1,195 @@
 const express = require('express');
-const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
+const cors = require('cors');
+const path = require('path');
 
-const app = express();
 const prisma = new PrismaClient();
+const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// ==========================================
-// 1. مسارات المستخدمين وتسجيل الدخول
-// ==========================================
+// ================= 1. نظام المصادقة (Auth) =================
+
+// تسجيل مستخدم جديد (موظف أو عميل)
 app.post('/api/register', async (req, res) => {
-    try {
-        const { name, phone, password, role, branch } = req.body;
-        const user = await prisma.user.create({
-            data: { name, phone, password, role: role || 'عميل', branch }
-        });
-        res.json(user);
-    } catch (error) {
-        res.status(400).json({ error: "رقم الجوال مسجل مسبقاً أو هناك خطأ في البيانات" });
-    }
+  const { name, phone, password, role, branch } = req.body;
+  try {
+    const user = await prisma.user.create({
+      data: { name, phone, password, role: role || 'عميل', branch }
+    });
+    res.json(user);
+  } catch (error) {
+    res.status(400).json({ error: "رقم الجوال مسجل مسبقاً" });
+  }
 });
 
+// تسجيل الدخول
 app.post('/api/login', async (req, res) => {
-    try {
-        const { phone, password } = req.body;
-        const user = await prisma.user.findUnique({ where: { phone } });
-        if (!user || user.password !== password) {
-            return res.status(401).json({ error: "رقم الجوال أو كلمة المرور غير صحيحة" });
-        }
-        res.json(user);
-    } catch (error) {
-        res.status(500).json({ error: "حدث خطأ داخلي في الخادم" });
-    }
+  const { phone, password } = req.body;
+  const user = await prisma.user.findFirst({ where: { phone, password } });
+  if (user) res.json(user);
+  else res.status(401).json({ error: "بيانات الدخول غير صحيحة" });
 });
 
+// جلب جميع المستخدمين
 app.get('/api/users', async (req, res) => {
-    try {
-        const users = await prisma.user.findMany();
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في جلب المستخدمين" });
-    }
+  const users = await prisma.user.findMany();
+  res.json(users);
 });
 
+// حذف مستخدم
 app.delete('/api/users/:id', async (req, res) => {
-    try {
-        await prisma.user.delete({ where: { id: parseInt(req.params.id) } });
-        res.json({ message: "تم الحذف بنجاح" });
-    } catch (error) {
-        res.status(500).json({ error: "خطأ أثناء الحذف" });
-    }
+  await prisma.user.delete({ where: { id: parseInt(req.params.id) } });
+  res.json({ success: true });
 });
 
-// ==========================================
-// 2. مسارات الفروع
-// ==========================================
+// تحديث مستخدم
+app.put('/api/users/:id', async (req, res) => {
+  const user = await prisma.user.update({
+    where: { id: parseInt(req.params.id) },
+    data: req.body
+  });
+  res.json(user);
+});
+
+// ================= 2. إدارة الفروع (Branches) =================
+
 app.get('/api/branches', async (req, res) => {
-    try {
-        const branches = await prisma.branch.findMany();
-        res.json(branches);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في جلب الفروع" });
-    }
+  const branches = await prisma.branch.findMany();
+  res.json(branches);
 });
 
 app.post('/api/branches', async (req, res) => {
-    try {
-        const { name } = req.body;
-        const branch = await prisma.branch.create({ data: { name } });
-        res.json(branch);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في إضافة الفرع" });
-    }
+  const branch = await prisma.branch.create({ data: req.body });
+  res.json(branch);
+});
+
+app.put('/api/branches/:id', async (req, res) => {
+  const branch = await prisma.branch.update({
+    where: { id: parseInt(req.params.id) },
+    data: req.body
+  });
+  res.json(branch);
 });
 
 app.delete('/api/branches/:id', async (req, res) => {
-    try {
-        await prisma.branch.delete({ where: { id: parseInt(req.params.id) } });
-        res.json({ message: "تم الحذف" });
-    } catch (error) {
-        res.status(500).json({ error: "خطأ أثناء الحذف" });
-    }
+  await prisma.branch.delete({ where: { id: parseInt(req.params.id) } });
+  res.json({ success: true });
 });
 
-// ==========================================
-// 3. مسارات الأقسام
-// ==========================================
+// ================= 3. إدارة المنيو (Categories & Products) =================
+
+// الأقسام
 app.get('/api/categories', async (req, res) => {
-    try {
-        const categories = await prisma.category.findMany({ include: { products: true } });
-        res.json(categories);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في جلب الأقسام" });
-    }
+  const categories = await prisma.category.findMany({ include: { products: true } });
+  res.json(categories);
 });
 
 app.post('/api/categories', async (req, res) => {
-    try {
-        const { name } = req.body;
-        const category = await prisma.category.create({ data: { name } });
-        res.json(category);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في إضافة القسم" });
-    }
+  const category = await prisma.category.create({ data: req.body });
+  res.json(category);
+});
+
+app.put('/api/categories/:id', async (req, res) => {
+  const category = await prisma.category.update({
+    where: { id: parseInt(req.params.id) },
+    data: req.body
+  });
+  res.json(category);
 });
 
 app.delete('/api/categories/:id', async (req, res) => {
-    try {
-        await prisma.category.delete({ where: { id: parseInt(req.params.id) } });
-        res.json({ message: "تم الحذف" });
-    } catch (error) {
-        res.status(500).json({ error: "خطأ أثناء الحذف" });
-    }
+  await prisma.category.delete({ where: { id: parseInt(req.params.id) } });
+  res.json({ success: true });
 });
 
-// ==========================================
-// 4. مسارات المنتجات (تم التحديث لدعم الصور)
-// ==========================================
+// المنتجات
 app.get('/api/products', async (req, res) => {
-    try {
-        const products = await prisma.product.findMany();
-        res.json(products);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في جلب المنتجات" });
-    }
+  const products = await prisma.product.findMany({ include: { category: true } });
+  res.json(products);
 });
 
 app.post('/api/products', async (req, res) => {
-    try {
-        // 🌟 استقبال رابط الصورة من لوحة الإدارة
-        const { name, price, categoryId, imageUrl } = req.body;
-        const product = await prisma.product.create({
-            data: { 
-                name, 
-                price: parseFloat(price), 
-                categoryId: parseInt(categoryId),
-                imageUrl: imageUrl || null // حفظ الصورة إذا وجدت
-            }
-        });
-        res.json(product);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في إضافة المنتج" });
-    }
+  const product = await prisma.product.create({ data: req.body });
+  res.json(product);
+});
+
+app.put('/api/products/:id', async (req, res) => {
+  const product = await prisma.product.update({
+    where: { id: parseInt(req.params.id) },
+    data: req.body
+  });
+  res.json(product);
 });
 
 app.delete('/api/products/:id', async (req, res) => {
-    try {
-        await prisma.product.delete({ where: { id: parseInt(req.params.id) } });
-        res.json({ message: "تم الحذف" });
-    } catch (error) {
-        res.status(500).json({ error: "خطأ أثناء الحذف" });
-    }
+  await prisma.product.delete({ where: { id: parseInt(req.params.id) } });
+  res.json({ success: true });
 });
 
+// تفعيل/إيقاف منتج (للمطبخ)
 app.put('/api/products/:id/toggle', async (req, res) => {
-    try {
-        const { isAvailable } = req.body;
-        const product = await prisma.product.update({
-            where: { id: parseInt(req.params.id) },
-            data: { isAvailable }
-        });
-        res.json(product);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في تحديث المنتج" });
-    }
+  const { isAvailable } = req.body;
+  const product = await prisma.product.update({
+    where: { id: parseInt(req.params.id) },
+    data: { isAvailable }
+  });
+  res.json(product);
 });
 
-// ==========================================
-// 5. مسارات الطلبات
-// ==========================================
-app.get('/api/orders', async (req, res) => {
-    try {
-        const orders = await prisma.order.findMany();
-        res.json(orders);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في جلب الطلبات" });
-    }
-});
+// ================= 4. إدارة الطلبات (Orders) =================
 
+// إنشاء طلب جديد
 app.post('/api/orders', async (req, res) => {
-    try {
-        const { userId, customerName, orderType, branch, totalPrice, items, paymentStatus } = req.body;
-        const order = await prisma.order.create({
-            data: {
-                userId: parseInt(userId),
-                customerName,
-                orderType,
-                branch,
-                totalPrice: parseFloat(totalPrice),
-                items: JSON.stringify(items),
-                paymentStatus
-            }
-        });
-        res.json(order);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في إنشاء الطلب" });
+  const { userId, customerName, orderType, branch, totalPrice, items, paymentStatus } = req.body;
+  const order = await prisma.order.create({
+    data: {
+      userId,
+      customerName,
+      orderType,
+      branch,
+      totalPrice,
+      items: JSON.stringify(items),
+      paymentStatus,
+      status: 'قيد الانتظار'
     }
+  });
+  res.json(order);
 });
 
+// جلب جميع الطلبات
+app.get('/api/orders', async (req, res) => {
+  const orders = await prisma.order.findMany();
+  res.json(orders);
+});
+
+// جلب طلبات مستخدم معين (للعميل)
+app.get('/api/orders/user/:userId', async (req, res) => {
+  const orders = await prisma.order.findMany({
+    where: { userId: parseInt(req.params.userId) }
+  });
+  res.json(orders);
+});
+
+// تحديث حالة الطلب (للمطبخ)
 app.put('/api/orders/:id/status', async (req, res) => {
-    try {
-        const { status } = req.body;
-        const order = await prisma.order.update({
-            where: { id: parseInt(req.params.id) },
-            data: { status }
-        });
-        res.json(order);
-    } catch (error) {
-        res.status(500).json({ error: "خطأ في تحديث الطلب" });
-    }
+  const { status } = req.body;
+  const order = await prisma.order.update({
+    where: { id: parseInt(req.params.id) },
+    data: { status }
+  });
+  res.json(order);
 });
 
-// ==========================================
-// تشغيل الخادم وإنشاء مدير افتراضي
-// ==========================================
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-    console.log(`✅ خادم مطعم أبو مهل يعمل الآن على المنفذ ${PORT}`);
-    try {
-        const adminExists = await prisma.user.findFirst({ where: { role: 'مدير' } });
-        if (!adminExists) {
-            await prisma.user.create({
-                data: { name: 'المدير العام', phone: '0500000000', password: '123456', role: 'مدير' }
-            });
-            console.log('👑 تم إنشاء حساب المدير الافتراضي بنجاح!');
-        }
-    } catch (error) {
-        console.log('⚠️ خطأ أثناء التحقق من حساب المدير:', error.message);
-    }
+app.delete('/api/orders/:id', async (req, res) => {
+  await prisma.order.delete({ where: { id: parseInt(req.params.id) } });
+  res.json({ success: true });
+});
+
+// ================= 5. تشغيل السيرفر =================
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
